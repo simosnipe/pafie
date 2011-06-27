@@ -1,11 +1,12 @@
 operation	target	value	wait_before
-navigate	http://www.interia.pl/		0
+navigate		http://www.interia.pl/	0
 value	q	test	3000
 click	searchButton		1000
 checked	wpl	TRUE	3000
-click	s		3000
-navigate	http://www.wp.pl/		3000
-navigate	http://www.google.com/		2000
+click	s		5000
+navigate		http://www.wp.pl/	3000
+navigate		http://www.google.com/	2000
 value	q	test	2000
 click	btnG		2000
-navigate	http://www.onet.pl/		2000
+navigate		http://www.onet.pl/	2000
+close		        	
