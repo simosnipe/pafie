@@ -1,73 +1,23 @@
-function browser_navigate($browser, $url)
-{
-    if ($url -eq '')
-    {
-        Write-Host "ERROR: Empty navigation url " -backgroundcolor red;
-        return $false;
-    }
-    $browser.navigate($url);
-    return $true;
-} 
-
-function browser_set_value($browser, $target, $value)
-{
-    if ($target -eq '')
-    {
-        Write-Host "ERROR: Empty target url " -backgroundcolor red;
-        return $false;
-    }
-    $browser.Document.getElementById($target).value = $value;
-    return $true;
-} 
-
-function browser_click($browser, $target)
-{
-    if ($target -eq '')
-    {
-        Write-Host "ERROR: Empty target " -backgroundcolor red;
-        return $false;
-    }
-    $browser.Document.getElementById($target).Click();
-    return $true;
+param($file, $show) 
+. .\browser.ps1 
+function get_timestamp{
+    $retval = Get-Date -uformat "%Y.%m.%d %H:%M:%S";
+    return $retval;
 }
 
-function browser_checked($browser, $target, $value)
-{
-    if ($target -eq '')
-    {
-        Write-Host "ERROR: Empty target url " -backgroundcolor red;
-        return $false;
-    }
-    $browser.Document.getElementById($target).checked  = $true;
-    return $true;
-}
- 
-
-function create_ie
-{
-    $ie = New-Object -com internetexplorer.application;
-    $ie.visible = $true;
-    return $ie
+function parse_show_parameters($show){
+    $global:show_all = $false;
+    $global:show_run = $false;
+    $global:show_get = $false;
+    $global:show_test = $false
+    if ($show -match "a") {$global:show_all = $true} 
+    if ($show -match "r") {$global:show_run = $true}
+    if ($show -match "g") {$global:show_get = $true}
+    if ($show -match "t") {$global:show_test = $true}
 }
 
-
-function w8_for_ie ($browser)
-{
-	while ($browser.Busy -eq $true) { Start-Sleep -Milliseconds 500 }
-}
-
-
-$step_file =  Import-Csv -Delimiter "`t" -Path $args[0];
-$browser = create_ie;
-$line_num = 0;
-
-foreach ($line in $step_file)
-{   
-    $line_num++;
-    w8_for_ie $browser
-    Write-Host "EXECUTING: " $line_num $line.operation $line.target	$line.value	$line.wait_before -nonewline;
-    Start-Sleep -Milliseconds $line.wait_before;
-    $retval = $false
+function step_run($line, $line_num, $browser){
+    if($global:show_all -or $global:show_run) { get_timestamp | Write-Host -nonewline; Write-Host " RUN: " -foregroundcolor black -backgroundcolor yellow -nonewline; Write-Host $line_num $line.operation $line.target $line.value $line.wait_before }
     switch ($line.operation) 
     { 
         'navigate' 
@@ -93,6 +43,65 @@ foreach ($line in $step_file)
         } 
         default {Write-Host " ERROR:Unknown operation " -backgroundcolor red -nonewline}
     }
-    if ($retval) {Write-Host " OK" -foregroundcolor black -backgroundcolor green}
+}
 
+function step_get($line, $line_num, $browser){
+    if($global:show_all -or $global:show_get) {
+        get_timestamp | Write-Host -nonewline; Write-Host " GET: " -foregroundcolor black -backgroundcolor green -nonewline; Write-Host $line_num $line.operation $line.target $line.value $line.wait_before ;
+        get_timestamp | Write-Host -nonewline; Write-Host " GET LINE=" $line_num -foregroundcolor black -backgroundcolor green;
+        Write-Host "URL=" -nonewline; browser_get_url $browser | Write-Host ;
+        Write-Host "TARGET=" $line.target;
+    }
+    switch ($line.operation) 
+    {
+        'navigate' 
+        {
+            Write-Host "NOT IMPLEMENTED YET SRY" -foregroundcolor black -backgroundcolor turqoise;  
+        } 
+        'value' 
+        {
+            $retval = browser_get_value $browser $line.target $line.value
+            if($global:show_all -or $global:show_get) { Write-Host "VALUE=" $retval; }
+        } 
+        'checked'
+        {
+            $retval = browser_get_checked $browser $line.target
+            if ($retval){
+                if($global:show_all -or $global:show_get) { Write-Host "CHECKED=TRUE"; }
+            }
+            else { 
+                if($global:show_all -or $global:show_get) { Write-Host "CHECKED=FALSE"; }
+            }
+        }
+        default {Write-Host " ERROR:Unknown operation " -backgroundcolor red -nonewline}
+    }
+}
+
+parse_show_parameters $show
+$step_file =  Import-Csv -Delimiter "`t" -Path $file;
+$browser = create_ie;
+$line_num = 0;
+
+foreach ($line in $step_file)
+{   
+    $line_num++;
+    w8_for_browser $browser
+#    Write-Host "EXECUTING: " $line_num $line.operation $line.target	$line.value	$line.wait_before ;
+    Start-Sleep -Milliseconds $line.wait_before;
+    $retval = $false
+    switch ($line.instruction) 
+    {
+        '' 
+        {
+            $retval = step_run $line $line_num $browser
+        } 
+        'run' 
+        {
+            $retval = step_run $line $line_num $browser
+        } 
+        'get' 
+        {
+            $retval = step_get $line $line_num $browser
+        } 
+    }
 }

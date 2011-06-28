@@ -1,12 +1,13 @@
-operation	target	value	wait_before
-navigate		http://www.interia.pl/	0
-value	q	test	3000
-click	searchButton		1000
-checked	wpl	TRUE	3000
-click	s		5000
-navigate		http://www.wp.pl/	3000
-navigate		http://www.google.com/	2000
-value	q	test	2000
-click	btnG		2000
-navigate		http://www.onet.pl/	2000
-close		        	
+instruction	operation	target	value	wait_before
+run	navigate		http://www.interia.pl/	0
+run	value	q	test	1000
+get	value	q	test	1000
+run	click	searchButton		1000
+run	checked	wpl	TRUE	2000
+run	click	s		1000
+run	navigate		http://www.wp.pl/	2000
+run	navigate		http://www.google.com/	2000
+run	value	q	test	1000
+run	click	btnG		2000
+run	navigate		http://www.onet.pl/	1000
+run	close		        	
